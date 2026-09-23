@@ -1,15 +1,83 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="main.css">
     <title>Radd Dad's Data</title>
 </head>
+
 <body>
+
     <h1>RaddDad's Data Tree</h1>
+
     <h2>About Me</h2>
-        <p>I am a Dad who thinks that he is Radd and likes to learn new technologies.</p>
+    <p>
+        I am a Dad who thinks that he is Radd and likes to learn new technologies.
+    </p>
+
     <h2>What I am working on</h2>
-        <p>A site to display some data projects</p>
+    <p>
+        A site to display some data projects.
+    </p>
+
+    <section class="chat-section">
+        <h2>Ask the AI</h2>
+
+        <div class="chat-window" id="chatWindow">
+            <div class="message assistant-message">
+                Hey Dale. What do you want to talk about?
+            </div>
+        </div>
+
+        <form class="chat-form" id="chatForm">
+            <input
+                type="text"
+                id="chatInput"
+                placeholder="Ask me something..."
+                autocomplete="off"
+            >
+
+            <button type="submit">
+                Send
+            </button>
+        </form>
+    </section>
+
+    <footer></footer>
+
+    <script>
+        const chatForm = document.getElementById("chatForm");
+        const chatInput = document.getElementById("chatInput");
+        const chatWindow = document.getElementById("chatWindow");
+
+        chatForm.addEventListener("submit", function(event) {
+            event.preventDefault();
+
+            const message = chatInput.value.trim();
+
+            if (!message) {
+                return;
+            }
+
+            const userMessage = document.createElement("div");
+            userMessage.className = "message user-message";
+            userMessage.textContent = message;
+
+            chatWindow.appendChild(userMessage);
+
+            const placeholder = document.createElement("div");
+            placeholder.className = "message assistant-message";
+            placeholder.textContent =
+                "AI connection coming next 👀";
+
+            chatWindow.appendChild(placeholder);
+
+            chatInput.value = "";
+
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        });
+    </script>
+
 </body>
-<footer></footer>
 </html>
