@@ -138,3 +138,8 @@ footer {
 .chat-form button:hover {
     opacity: 0.9;
 }
+
+.chat-form button:disabled {
+    opacity: 0.6;
+    cursor: wait;
+}

@@ -24,7 +24,7 @@
     <section class="chat-section">
         <h2>Ask the AI</h2>
 
-        <div class="chat-window" id="chatWindow">
+        <div class="chat-window" id="chatWindow" role="log" aria-label="Chat messages" aria-live="polite">
             <div class="message assistant-message">
                 Hey Dale. What do you want to talk about?
             </div>
@@ -36,9 +36,11 @@
                 id="chatInput"
                 placeholder="Ask me something..."
                 autocomplete="off"
+                maxlength="1200"
+                aria-label="Your message"
             >
 
-            <button type="submit">
+            <button type="submit" id="chatSend">
                 Send
             </button>
         </form>
@@ -50,32 +52,64 @@
         const chatForm = document.getElementById("chatForm");
         const chatInput = document.getElementById("chatInput");
         const chatWindow = document.getElementById("chatWindow");
+        const chatSend = document.getElementById("chatSend");
+        // Set this to the URL of your deployed Vercel function after deployment.
+        const CHAT_API_URL = "https://YOUR-VERCEL-PROJECT.vercel.app/api/chat";
+        const conversation = [];
 
-        chatForm.addEventListener("submit", function(event) {
+        function addMessage(text, className) {
+            const element = document.createElement("div");
+            element.className = `message ${className}`;
+            element.textContent = text;
+            chatWindow.appendChild(element);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+            return element;
+        }
+
+        chatForm.addEventListener("submit", async function(event) {
             event.preventDefault();
 
             const message = chatInput.value.trim();
-
-            if (!message) {
+            if (!message || chatSend.disabled) {
                 return;
             }
 
-            const userMessage = document.createElement("div");
-            userMessage.className = "message user-message";
-            userMessage.textContent = message;
-
-            chatWindow.appendChild(userMessage);
-
-            const placeholder = document.createElement("div");
-            placeholder.className = "message assistant-message";
-            placeholder.textContent =
-                "AI connection coming next 👀";
-
-            chatWindow.appendChild(placeholder);
-
+            addMessage(message, "user-message");
             chatInput.value = "";
+            chatSend.disabled = true;
+            chatInput.disabled = true;
+            const reply = addMessage("Thinking…", "assistant-message");
 
-            chatWindow.scrollTop = chatWindow.scrollHeight;
+            try {
+                if (CHAT_API_URL.includes("YOUR-VERCEL-PROJECT")) {
+                    throw new Error("not-configured");
+                }
+
+                const messages = [...conversation, { role: "user", content: message }].slice(-8);
+                const response = await fetch(CHAT_API_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ messages })
+                });
+                const data = await response.json();
+                if (!response.ok || typeof data.reply !== "string" || !data.reply.trim()) {
+                    throw new Error("api-error");
+                }
+
+                reply.textContent = data.reply;
+                conversation.push({ role: "user", content: message });
+                conversation.push({ role: "assistant", content: data.reply });
+                if (conversation.length > 8) conversation.splice(0, conversation.length - 8);
+            } catch (error) {
+                reply.textContent = error.message === "not-configured"
+                    ? "Chat is being connected. Please try again soon."
+                    : "Couldn’t get a reply. Please try again.";
+            } finally {
+                chatSend.disabled = false;
+                chatInput.disabled = false;
+                chatInput.focus();
+                chatWindow.scrollTop = chatWindow.scrollHeight;
+            }
         });
     </script>
 
