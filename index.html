@@ -23,6 +23,7 @@
 
     <section class="chat-section">
         <h2>Ask the AI</h2>
+        <p>Powered by Gemini. Please don't share private information in this chat.</p>
 
         <div class="chat-window" id="chatWindow" role="log" aria-label="Chat messages" aria-live="polite">
             <div class="message assistant-message">
@@ -53,8 +54,7 @@
         const chatInput = document.getElementById("chatInput");
         const chatWindow = document.getElementById("chatWindow");
         const chatSend = document.getElementById("chatSend");
-        // Set this to the URL of your deployed Vercel function after deployment.
-        const CHAT_API_URL = "https://YOUR-VERCEL-PROJECT.vercel.app/api/chat";
+        const CHAT_API_URL = "https://mywebsite-raddadd.vercel.app/api/chat";
         const conversation = [];
 
         function addMessage(text, className) {
@@ -81,10 +81,6 @@
             const reply = addMessage("Thinking…", "assistant-message");
 
             try {
-                if (CHAT_API_URL.includes("YOUR-VERCEL-PROJECT")) {
-                    throw new Error("not-configured");
-                }
-
                 const messages = [...conversation, { role: "user", content: message }].slice(-8);
                 const response = await fetch(CHAT_API_URL, {
                     method: "POST",
@@ -101,9 +97,7 @@
                 conversation.push({ role: "assistant", content: data.reply });
                 if (conversation.length > 8) conversation.splice(0, conversation.length - 8);
             } catch (error) {
-                reply.textContent = error.message === "not-configured"
-                    ? "Chat is being connected. Please try again soon."
-                    : "Couldn’t get a reply. Please try again.";
+                reply.textContent = "Couldn’t get a reply. Please try again.";
             } finally {
                 chatSend.disabled = false;
                 chatInput.disabled = false;

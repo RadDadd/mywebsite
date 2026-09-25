@@ -43,7 +43,7 @@ export default {
         if (!request.headers.get("content-type")?.toLowerCase().startsWith("application/json")) {
             return json({ error: "Expected JSON" }, 415);
         }
-        if (!process.env.OPENAI_API_KEY) return json({ error: "Chat is not configured" }, 503);
+        if (!process.env.GEMINI_API_KEY) return json({ error: "Chat is not configured" }, 503);
 
         let messages;
         try {
@@ -61,30 +61,32 @@ export default {
         }
 
         try {
-            const upstream = await fetch("https://api.openai.com/v1/responses", {
+            // Gemini expects conversations to begin with a user turn. The browser
+            // retains eight messages, which can otherwise start with an assistant.
+            while (messages[0]?.role === "assistant") messages.shift();
+            const upstream = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent", {
                 method: "POST",
                 headers: {
-                    "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
+                    "x-goog-api-key": process.env.GEMINI_API_KEY,
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify({
-                    model: "gpt-4.1-mini",
-                    instructions: "You are a concise, friendly assistant on RadDadd's Data Tree, a personal site for Dale's data and technology projects. Answer questions conversationally. You can describe this page as a place to share data projects and experiments. Do not invent details about projects or claim access to private data or live news.",
-                    input: messages,
-                    max_output_tokens: 300,
-                    store: false
+                    systemInstruction: { parts: [{ text: "You are a concise, friendly assistant on RadDadd's Data Tree, a personal site for Dale's data and technology projects. Answer questions conversationally. You can describe this page as a place to share data projects and experiments. Do not invent details about projects or claim access to private data or live news." }] },
+                    contents: messages.map(m => ({
+                        role: m.role === "assistant" ? "model" : "user",
+                        parts: [{ text: m.content }]
+                    })),
+                    generationConfig: { maxOutputTokens: 300 }
                 }),
                 signal: AbortSignal.timeout(20000)
             });
             if (!upstream.ok) {
-                console.error("OpenAI request failed with status", upstream.status);
+                console.error("Gemini request failed with status", upstream.status);
                 return json({ error: "Chat service unavailable" }, upstream.status === 429 ? 429 : 502);
             }
             const data = await upstream.json();
-            const reply = data.output
-                ?.filter(item => item.type === "message" && item.role === "assistant")
-                .flatMap(item => item.content || [])
-                .filter(part => part.type === "output_text")
+            const reply = data.candidates?.[0]?.content?.parts
+                ?.filter(part => typeof part.text === "string" && !part.thought)
                 .map(part => part.text)
                 .join("\n")
                 .trim();
