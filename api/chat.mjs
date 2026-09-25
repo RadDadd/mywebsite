@@ -64,7 +64,7 @@ export default {
             // Gemini expects conversations to begin with a user turn. The browser
             // retains eight messages, which can otherwise start with an assistant.
             while (messages[0]?.role === "assistant") messages.shift();
-            const upstream = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent", {
+            const upstream = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent", {
                 method: "POST",
                 headers: {
                     "x-goog-api-key": process.env.GEMINI_API_KEY,
@@ -76,12 +76,15 @@ export default {
                         role: m.role === "assistant" ? "model" : "user",
                         parts: [{ text: m.content }]
                     })),
-                    generationConfig: { maxOutputTokens: 300 }
+                    generationConfig: { maxOutputTokens: 500, thinkingConfig: { thinkingLevel: "minimal" } }
                 }),
                 signal: AbortSignal.timeout(20000)
             });
             if (!upstream.ok) {
-                console.error("Gemini request failed with status", upstream.status);
+                const errorData = await upstream.json().catch(() => ({}));
+                const providerMessage = String(errorData.error?.message || "No provider details")
+                    .replaceAll(process.env.GEMINI_API_KEY, "[redacted]").slice(0, 300);
+                console.error("Gemini request failed", upstream.status, providerMessage);
                 return json({ error: "Chat service unavailable" }, upstream.status === 429 ? 429 : 502);
             }
             const data = await upstream.json();

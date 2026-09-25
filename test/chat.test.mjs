@@ -33,10 +33,11 @@ test("rejects oversized and malformed messages", async () => {
 test("forwards bounded conversation and returns only assistant text", async () => {
     process.env.GEMINI_API_KEY = "test-key";
     globalThis.fetch = async (url, options) => {
-        assert.equal(url, "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent");
+        assert.equal(url, "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent");
         assert.equal(options.headers["x-goog-api-key"], "test-key");
         const body = JSON.parse(options.body);
-        assert.equal(body.generationConfig.maxOutputTokens, 300);
+        assert.equal(body.generationConfig.maxOutputTokens, 500);
+        assert.equal(body.generationConfig.thinkingConfig.thinkingLevel, "minimal");
         assert.match(body.systemInstruction.parts[0].text, /RadDadd/);
         assert.deepEqual(body.contents, [{ role: "user", parts: [{ text: "Explain this page" }] }]);
         return Response.json({
