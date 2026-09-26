@@ -1,4 +1,4 @@
-const allowedOrigin = process.env.ALLOWED_ORIGIN || "https://raddadd.github.io";
+const allowedOrigin = process.env.ALLOWED_ORIGIN || "https://raddata.dev";
 const corsHeaders = {
     "Access-Control-Allow-Origin": allowedOrigin,
     "Access-Control-Allow-Methods": "POST, OPTIONS",
