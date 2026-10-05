@@ -1,28 +1,42 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>NFL Stats</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="main.css">
+    <link rel="stylesheet" href="nfl-stats.css">
+    <script src="nfl-stats.js" defer></script>
+    <title>NFL Stats | RaddDad's Data</title>
 </head>
-<body>
-	<h1>NFL Stats</h1>
-
-	<table>
-		<thead>
-			<tr>
-				<th scope="col">Player</th>
-				<th scope="col">Team</th>
-				<th scope="col">Position</th>
-				<th scope="col">Games</th>
-				<th scope="col">Passing Yards</th>
-				<th scope="col">Rushing Yards</th>
-				<th scope="col">Receiving Yards</th>
-				<th scope="col">Touchdowns</th>
-			</tr>
-		</thead>
-		<tbody>
-		</tbody>
-	</table>
+<body class="nfl-page">
+    <main>
+        <nav><a href="index.html">← RaddDad's Data Tree</a></nav>
+        <h1>NFL Stats</h1>
+        <p>Explore regular-season player stats. Choose season totals or a single week.</p>
+        <form id="statsFilters" class="stats-filters">
+            <label>Season<select id="season" name="season"></select></label>
+            <label>Week<select id="week" name="week"><option value="all">Season totals</option></select></label>
+            <label>Team<select id="team"><option value="all">All teams</option></select></label>
+            <label>Position<select id="position"><option value="all">All positions</option><option>QB</option><option>RB</option><option>WR</option><option>TE</option><option>FB</option></select></label>
+            <label>Player<input id="playerSearch" type="search" placeholder="Search a player…" maxlength="100"></label>
+            <label>Sort by<select id="sort"><option value="passingYards">Passing yards</option><option value="rushingYards">Rushing yards</option><option value="receivingYards">Receiving yards</option><option value="touchdowns">Touchdowns</option><option value="name">Player name</option></select></label>
+            <button id="loadStats" type="submit">Load stats</button>
+        </form>
+        <p id="statsStatus" role="status" aria-live="polite">Loading NFL stats…</p>
+        <div class="table-scroll" tabindex="0" role="region" aria-label="NFL player stats table; scroll horizontally for more columns">
+            <table id="statsTable" aria-busy="true">
+                <caption id="statsCaption">Regular-season player statistics</caption>
+                <thead><tr>
+                    <th scope="col">Player</th><th scope="col">Team</th><th scope="col">Position</th><th scope="col">Games*</th>
+                    <th scope="col">Passing yards</th><th scope="col">Rushing yards</th><th scope="col">Receiving yards</th><th scope="col">Touchdowns†</th>
+                </tr></thead>
+                <tbody id="statsBody"></tbody>
+            </table>
+        </div>
+        <p class="stats-note">* Games with a recorded stats row, not an official games-played count. † Passing + rushing + receiving touchdowns; passing and receiving TDs credit different players on the same play. Teams shown include all teams represented in the selected period.</p>
+        <p class="stats-note">Data from <a href="https://github.com/nflverse/nflverse-data">nflverse</a>. Stats update after games; this is not a live game feed. This page caches data for up to one hour.</p>
+        <p id="dataTime" class="stats-note"></p>
+        <noscript><p>Enable JavaScript to load player stats.</p></noscript>
+    </main>
 </body>
 </html>
