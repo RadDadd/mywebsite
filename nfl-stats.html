@@ -6,6 +6,7 @@
     <link rel="stylesheet" href="main.css">
     <link rel="stylesheet" href="nfl-stats.css">
     <script src="nfl-stats.js" defer></script>
+    <script src="nfl-chat.js" defer></script>
     <title>NFL Stats | RaddDad's Data</title>
 </head>
 <body class="nfl-page">
@@ -13,6 +14,23 @@
         <nav><a href="index.html">← RaddDad's Data Tree</a></nav>
         <h1>NFL Stats</h1>
         <p>Explore regular-season player stats. Choose season totals or a single week.</p>
+        <section class="chat-section nfl-chat" aria-labelledby="chatTitle">
+            <h2 id="chatTitle">Ask the football stats</h2>
+            <p>Ask in plain English. Uses the season and week selected below unless you name another period. Searches all players unless you ask for a team or position.</p>
+            <div class="chat-examples" aria-label="Example questions">
+                <button type="button" data-question="Which RB had the most touchdowns in Week 3?">RB touchdown leaders · Week 3</button>
+                <button type="button" data-question="Which running backs are trending up?">RBs trending up</button>
+                <button type="button" data-question="Which WR has the most receiving yards?">WR receiving leaders</button>
+            </div>
+            <div class="chat-window" id="chatWindow" role="log" aria-label="Football chat messages" aria-live="polite">
+                <div class="message assistant-message">Ask me to find leaders, look up a player, or compare recent weekly performance. I calculate answers from nflverse stats.</div>
+            </div>
+            <form class="chat-form" id="chatForm">
+                <input type="text" id="chatInput" placeholder="Which RB had the most TDs in Week 3?" maxlength="1200" autocomplete="off" required aria-label="Your football stats question">
+                <button type="submit" id="chatSend">Ask</button>
+            </form>
+            <p class="stats-note">Powered by Gemini to interpret your question. Answers use recorded stats, not live news or predictions. Default trends compare PPR points per recorded game across recent weeks. Please don't share private information.</p>
+        </section>
         <form id="statsFilters" class="stats-filters">
             <label>Season<select id="season" name="season"></select></label>
             <label>Week<select id="week" name="week"><option value="all">Season totals</option></select></label>

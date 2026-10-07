@@ -23,91 +23,11 @@
 
     <p><a href="nfl-stats.html" style="color: var(--accent)">Explore NFL Stats →</a></p>
 
-    <section class="chat-section">
-        <h2>Ask the AI</h2>
-        <p>Powered by Gemini. Please don't share private information in this chat.</p>
 
-        <div class="chat-window" id="chatWindow" role="log" aria-label="Chat messages" aria-live="polite">
-            <div class="message assistant-message">
-                What do you want to talk about?
-            </div>
-        </div>
-
-        <form class="chat-form" id="chatForm">
-            <input
-                type="text"
-                id="chatInput"
-                placeholder="Ask me something..."
-                autocomplete="off"
-                maxlength="1200"
-                aria-label="Your message"
-            >
-
-            <button type="submit" id="chatSend">
-                Send
-            </button>
-        </form>
-    </section>
 
     <footer></footer>
 
-    <script>
-        const chatForm = document.getElementById("chatForm");
-        const chatInput = document.getElementById("chatInput");
-        const chatWindow = document.getElementById("chatWindow");
-        const chatSend = document.getElementById("chatSend");
-        const CHAT_API_URL = "https://mywebsite-raddadd.vercel.app/api/chat";
-        const conversation = [];
 
-        function addMessage(text, className) {
-            const element = document.createElement("div");
-            element.className = `message ${className}`;
-            element.textContent = text;
-            chatWindow.appendChild(element);
-            chatWindow.scrollTop = chatWindow.scrollHeight;
-            return element;
-        }
-
-        chatForm.addEventListener("submit", async function(event) {
-            event.preventDefault();
-
-            const message = chatInput.value.trim();
-            if (!message || chatSend.disabled) {
-                return;
-            }
-
-            addMessage(message, "user-message");
-            chatInput.value = "";
-            chatSend.disabled = true;
-            chatInput.disabled = true;
-            const reply = addMessage("Thinking…", "assistant-message");
-
-            try {
-                const messages = [...conversation, { role: "user", content: message }].slice(-8);
-                const response = await fetch(CHAT_API_URL, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ messages })
-                });
-                const data = await response.json();
-                if (!response.ok || typeof data.reply !== "string" || !data.reply.trim()) {
-                    throw new Error("api-error");
-                }
-
-                reply.textContent = data.reply;
-                conversation.push({ role: "user", content: message });
-                conversation.push({ role: "assistant", content: data.reply });
-                if (conversation.length > 8) conversation.splice(0, conversation.length - 8);
-            } catch (error) {
-                reply.textContent = "Couldn’t get a reply. Please try again.";
-            } finally {
-                chatSend.disabled = false;
-                chatInput.disabled = false;
-                chatInput.focus();
-                chatWindow.scrollTop = chatWindow.scrollHeight;
-            }
-        });
-    </script>
 
 </body>
 </html>

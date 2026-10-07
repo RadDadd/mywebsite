@@ -1,6 +1,14 @@
 .nfl-page > main { width: min(1200px, 100%); }
 .nfl-page a { color: var(--accent); }
 .nfl-page nav { margin-bottom: 28px; }
+.nfl-chat { margin: 24px 0 32px; }
+.nfl-chat .chat-window { min-height: 180px; max-height: 460px; }
+.nfl-chat .message { white-space: pre-wrap; }
+.chat-examples { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+.chat-examples button { background: var(--surface); color: var(--accent); border: 1px solid var(--border); border-radius: 20px; padding: 9px 12px; cursor: pointer; font: inherit; font-size: .85rem; }
+.chat-examples button:disabled { opacity: .6; cursor: wait; }
+.chat-source { display: block; margin-top: 10px; font-size: .8rem; color: var(--muted); }
+.nfl-chat .chat-form input { min-width: 0; }
 .stats-filters { display: flex; flex-wrap: wrap; align-items: end; gap: 14px; padding: 20px; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; }
 .stats-filters label { display: flex; flex-direction: column; gap: 6px; font-size: .9rem; }
 .stats-filters input, .stats-filters select, .stats-filters button { min-height: 44px; padding: 10px 12px; border-radius: 8px; font: inherit; }
