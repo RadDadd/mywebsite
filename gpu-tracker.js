@@ -85,11 +85,17 @@ function timeCell(value) {
 function renderTable() {
   const rows = shownRows();
   const lowest = lowestAvailable(allRows());
+  const specs = currentCard().specs ?? {};
+  const basicStats = [
+    specs.vram_gb ? `${specs.vram_gb} GB ${specs.memory_type ?? ''} VRAM`.replace(/ +/g, ' ') : null,
+    specs.core_count ? `${specs.core_count.toLocaleString('en-US')} ${specs.core_type ?? 'cores'}` : null
+  ].filter(Boolean).join(' · ');
   $('price-rows').replaceChildren(...rows.map(row => {
     const { observation: obs, listing, retailer, update, stale } = row;
     const tr = element('tr', undefined, state.selectedListing === listing.listing_id ? 'row-selected' : '');
     const name = element('td');
     name.append(element('span', retailer.name, 'retailer-name'), element('small', currentCard().full_card_name));
+    if (basicStats) name.append(element('small', basicStats));
     if (retailer.location) name.append(element('small', retailer.location));
     const price = element('td');
     price.append(element('span', obs ? money(obs.price_usd) : '—', 'price'));
