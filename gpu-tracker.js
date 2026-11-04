@@ -26,7 +26,10 @@ function svgElement(tag, attrs, text) {
 }
 
 async function fetchJson(path) {
-  const response = await fetch(DATA_BASE + path, {
+  // GitHub's raw data CDN can retain old JSON for five minutes after an update.
+  const url = new URL(DATA_BASE + path);
+  url.searchParams.set('refresh', String(Date.now()));
+  const response = await fetch(url.href, {
     mode: 'cors', credentials: 'omit', cache: 'no-cache', signal: AbortSignal.timeout(15000)
   });
   if (!response.ok) throw new Error(`Data request failed (${response.status})`);
