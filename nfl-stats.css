@@ -1,6 +1,5 @@
 .nfl-page > main { width: min(1200px, 100%); }
 .nfl-page a { color: var(--accent); }
-.nfl-page nav { margin-bottom: 28px; }
 .nfl-chat { margin: 24px 0 32px; }
 .nfl-chat .chat-window { min-height: 180px; max-height: 460px; }
 .nfl-chat .message { white-space: pre-wrap; }

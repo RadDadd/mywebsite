@@ -5,13 +5,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="main.css">
     <link rel="stylesheet" href="nfl-stats.css">
+    <link rel="stylesheet" href="site-nav.css">
     <script src="nfl-stats.js" defer></script>
     <script src="nfl-chat.js" defer></script>
     <title>NFL Stats | RaddDad's Data</title>
 </head>
-<body class="nfl-page">
-    <main>
-        <nav><a href="index.html">← RaddDad's Data Tree</a></nav>
+<body class="nfl-page has-site-nav">
+  <a class="site-skip" href="#main-content">Skip to content</a>
+  <header class="site-header">
+    <div class="site-header-inner">
+      <a class="wordmark" href="index.html" aria-label="RadData home">RAD<span>DATA</span><small> / lab</small></a>
+      <nav aria-label="Main navigation">
+        <a href="index.html">Home</a>
+        <a href="nfl-stats.html" aria-current="page">NFL Stats</a>
+        <a href="gpu-tracker.html">GPU Tracker</a>
+      </nav>
+    </div>
+  </header>
+    <main id="main-content" class="site-content">
         <h1>NFL Stats</h1>
         <p>Explore regular-season player stats. Choose season totals or a single week.</p>
         <section class="chat-section nfl-chat" aria-labelledby="chatTitle">

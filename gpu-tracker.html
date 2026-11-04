@@ -6,17 +6,20 @@
   <meta name="description" content="Compare GPU prices and availability across Micro Center, Newegg, Best Buy, and B&H, with dated price history.">
   <title>GPU Price Tracker · RadData</title>
   <link rel="stylesheet" href="gpu-tracker.css">
+  <link rel="stylesheet" href="site-nav.css">
   <script type="module" src="gpu-tracker.js"></script>
 </head>
-<body>
+<body class="has-site-nav">
   <a class="skip-link" href="#tracker">Skip to GPU prices</a>
   <header class="site-header">
-    <a class="wordmark" href="index.html" aria-label="RadData home">RAD<span>DATA</span><small> / lab</small></a>
-    <nav aria-label="Main navigation">
-      <a href="index.html">Home</a>
-      <a href="nfl-stats.html">NFL stats</a>
-      <a href="gpu-tracker.html" aria-current="page">GPU tracker</a>
-    </nav>
+    <div class="site-header-inner">
+      <a class="wordmark" href="index.html" aria-label="RadData home">RAD<span>DATA</span><small> / lab</small></a>
+      <nav aria-label="Main navigation">
+        <a href="index.html">Home</a>
+        <a href="nfl-stats.html">NFL Stats</a>
+        <a href="gpu-tracker.html" aria-current="page">GPU Tracker</a>
+      </nav>
+    </div>
   </header>
   <main id="tracker">
     <div class="hero">
@@ -54,7 +57,7 @@
       <div id="card-specs" class="card-specs" aria-label="Selected card specifications"></div>
       <p id="specs-note" class="specs-note"></p>
     </section>
-    <footer><p>USD · item prices before tax and shipping · new cards sold by each named retailer</p><p><a href="https://github.com/RadDadd/gpu-price-tracker" target="_blank" rel="noopener noreferrer">Price data ↗</a><span aria-hidden="true"> · </span><a href="index.html">Back to RadData</a></p></footer>
+    <footer><p>USD · item prices before tax and shipping · new cards sold by each named retailer</p><p><a href="https://github.com/RadDadd/gpu-price-tracker" target="_blank" rel="noopener noreferrer">Price data ↗</a></p></footer>
   </main>
 </body>
 </html>

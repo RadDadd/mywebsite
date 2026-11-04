@@ -1,0 +1,61 @@
+/* Shared navigation for every public page. Load after page styles. */
+body.has-site-nav { padding: 0; }
+.has-site-nav > .site-header {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  color: #e8eef8;
+  background: #0c111b;
+  border-bottom: 1px solid #29374b;
+  font: 15px/1.55 Arial, Helvetica, sans-serif;
+}
+.site-header-inner {
+  box-sizing: border-box;
+  max-width: 1184px;
+  margin: 0 auto;
+  padding: 23px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+.site-header .wordmark {
+  color: #e8eef8;
+  font-size: 23px;
+  font-weight: 600;
+  letter-spacing: -1px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.site-header .wordmark span { color: #75b5ff; }
+.site-header .wordmark small { color: #a3b2c8; font-size: 15px; font-weight: 400; letter-spacing: 0; }
+.site-header nav { display: flex; flex-wrap: wrap; align-items: center; gap: 22px; margin: 0; padding: 0; }
+.site-header nav a {
+  box-sizing: border-box;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 2px solid transparent;
+  color: #a3b2c8;
+  font-size: 15px;
+  font-weight: 400;
+  letter-spacing: normal;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.site-header nav a:hover { color: #e8eef8; }
+.site-header nav a[aria-current="page"] { color: #e8eef8; border-bottom-color: #75b5ff; }
+.site-header a:focus-visible, .site-skip:focus-visible { outline: 2px solid #75b5ff; outline-offset: 4px; }
+.site-content { box-sizing: border-box; padding: 38px 28px 24px; }
+.site-skip { position: absolute; top: 8px; left: 8px; width: auto; padding: 10px; color: #75b5ff; background: #121b29; transform: translateY(-160%); z-index: 5; }
+.site-skip:focus { transform: none; }
+@media (max-width: 760px) {
+  .site-header-inner { padding: 18px; gap: 12px; }
+  .site-header nav { gap: 18px; margin-left: auto; }
+  .site-header nav a { font-size: 13px; }
+  .site-content { padding: 28px 16px 20px; }
+}
