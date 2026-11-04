@@ -1,5 +1,15 @@
 # RadDadd's Data Tree
 
+## GPU price tracker
+
+Open `gpu-tracker.html` from the homepage. Its standalone CSS and browser JavaScript preserve the existing homepage and NFL pages.
+
+The page reads public JSON from `https://raw.githubusercontent.com/RadDadd/gpu-price-tracker/main/`: `data/cards.json`, `config/watchlist.json`, and `data/latest.json`. For chart history it loads `data/history/index.json`, then only dated snapshots in the selected 7/30/90-day range, with at most four concurrent file requests. No API key, backend, or rebuild is needed when the data repo gains observations. Refresh data reloads these files; it does not scrape retailers.
+
+See [the GPU data integration contract](docs/gpu-tracker.md) for exact producer fields. The collector is a separate project and is not enabled by this page. Empty data stays empty; the optional example chart uses clearly labelled invented points and never changes the price table.
+
+Run GPU data checks with `node --test test/gpu-tracker.test.mjs`.
+
 The static page is published from the root of `main` with GitHub Pages. The chat API is a Vercel Function in `api/chat.mjs`. The Gemini key must only be set as a Vercel environment variable, never in GitHub or browser code.
 
 ## Connect the chat

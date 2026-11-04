@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Compare GPU prices and availability across Micro Center, Newegg, Best Buy, and B&H, with dated price history.">
+  <title>GPU Price Tracker · RadData</title>
+  <link rel="stylesheet" href="gpu-tracker.css">
+  <script type="module" src="gpu-tracker.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#tracker">Skip to GPU prices</a>
+  <header class="site-header">
+    <a class="wordmark" href="index.html" aria-label="RadData home">RAD<span>DATA</span><small> / lab</small></a>
+    <nav aria-label="Main navigation">
+      <a href="index.html">Home</a>
+      <a href="nfl-stats.html">NFL stats</a>
+      <a href="gpu-tracker.html" aria-current="page">GPU tracker</a>
+    </nav>
+  </header>
+  <main id="tracker">
+    <div class="hero">
+      <div><p class="eyebrow">The hardware watchlist</p><h1>Find your next upgrade.</h1><p class="intro">Compare exact cards. Follow the price. Buy when it makes sense.</p></div>
+      <button type="button" id="refresh" class="secondary-button">Refresh data</button>
+    </div>
+    <p id="data-status" class="data-status" role="status" aria-live="polite">Loading the watchlist…</p>
+    <div id="load-error" class="notice error" role="alert" hidden></div>
+    <div id="collection-notice" class="notice" hidden></div>
+    <noscript><p class="notice">Enable JavaScript to load the retailer table and price chart. You can also <a href="https://github.com/RadDadd/gpu-price-tracker">view the source data</a>.</p></noscript>
+    <section aria-label="Choose an exact GPU card">
+      <div id="card-picker" class="card-picker" role="group" aria-label="Exact card models"></div>
+    </section>
+    <div class="filters">
+      <label class="filter-field" for="retailer-filter"><span>Retailer</span><select id="retailer-filter"><option value="all">All retailers</option></select></label>
+      <label class="stock-filter"><input type="checkbox" id="stock-filter"> In stock only</label>
+      <p id="offer-count" class="offer-count" aria-live="polite"></p>
+    </div>
+    <section class="comparison" aria-label="Retailer price comparison" aria-busy="true" id="comparison">
+      <table>
+        <caption class="sr-only">Retailer offers for the selected exact card. Prices exclude tax and shipping. Dates use Central Time.</caption>
+        <thead><tr><th scope="col">Retailer / card</th><th scope="col">Price</th><th scope="col">Change¹</th><th scope="col">Availability</th><th scope="col">Price checked · CT</th><th scope="col"><span class="sr-only">Actions</span></th></tr></thead>
+        <tbody id="price-rows"></tbody>
+      </table>
+      <p id="table-empty" class="empty" hidden>No offers match these filters.</p>
+    </section>
+    <p class="table-note">¹ Compared with the previous successful observation of the same offer, when history is available. Unknown shipping is not treated as free.</p>
+    <section class="history-panel" aria-labelledby="history-title">
+      <div class="history-heading"><div><p class="eyebrow">The longer view</p><h2 id="history-title">Price history</h2><p id="history-description">Successful price observations from the watchlist.</p></div><div class="periods" role="group" aria-label="History date range"><button type="button" data-days="7" aria-pressed="false">7 days</button><button type="button" data-days="30" aria-pressed="true">30 days</button><button type="button" data-days="90" aria-pressed="false">90 days</button></div></div>
+      <div class="history-toolbar"><div id="chart-legend" class="chart-legend" role="group" aria-label="Retailers shown in chart"></div><button id="demo-toggle" type="button" class="text-button" aria-pressed="false">Preview example chart</button></div>
+      <p id="history-message" class="chart-message" role="status" aria-live="polite">History will appear after the first successful price checks.</p>
+      <div class="chart-container" id="chart-container" hidden><svg id="price-chart" role="img" aria-labelledby="chart-title chart-desc"></svg><div id="chart-tooltip" class="chart-tooltip" role="status" aria-live="polite" hidden></div></div>
+      <p class="chart-note" id="chart-note"></p>
+      <details id="history-values" hidden><summary>View chart values</summary><div class="history-table-wrap"><table><thead><tr><th scope="col">Retailer</th><th scope="col">Price</th><th scope="col">Date · CT</th><th scope="col">Availability</th></tr></thead><tbody id="history-value-rows"></tbody></table></div></details>
+      <div id="card-specs" class="card-specs" aria-label="Selected card specifications"></div>
+      <p id="specs-note" class="specs-note"></p>
+    </section>
+    <footer><p>USD · item prices before tax and shipping · new cards sold by each named retailer</p><p><a href="https://github.com/RadDadd/gpu-price-tracker" target="_blank" rel="noopener noreferrer">Price data ↗</a><span aria-hidden="true"> · </span><a href="index.html">Back to RadData</a></p></footer>
+  </main>
+</body>
+</html>
