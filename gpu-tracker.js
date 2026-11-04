@@ -139,7 +139,9 @@ function renderStatus() {
     : 'Watchlist connected · no price observations collected yet';
   const notice = $('collection-notice');
   notice.hidden = state.watchlist.collection_enabled !== false;
-  notice.textContent = 'Price collection has not been enabled yet. The cards and retailers are ready; prices and timestamps will appear after successful checks.';
+  notice.textContent = state.latest.listings.some(listing => listing.last_successful_observation?.collection_status === 'success')
+    ? 'One-time price snapshot · automatic collection is not enabled. Each offer shows its last successful price-check time.'
+    : 'Price collection has not been enabled yet. The cards and retailers are ready; prices and timestamps will appear after successful checks.';
 }
 
 async function loadData() {
