@@ -89,7 +89,8 @@ function renderTable() {
     const { observation: obs, listing, retailer, update, stale } = row;
     const tr = element('tr', undefined, state.selectedListing === listing.listing_id ? 'row-selected' : '');
     const name = element('td');
-    name.append(element('span', retailer.name, 'retailer-name'), element('small', retailer.location || currentCard().series));
+    name.append(element('span', retailer.name, 'retailer-name'), element('small', currentCard().full_card_name));
+    if (retailer.location) name.append(element('small', retailer.location));
     const price = element('td');
     price.append(element('span', obs ? money(obs.price_usd) : '—', 'price'));
     if (row.eligible && obs.price_usd === lowest) price.append(element('span', 'Lowest available', 'best'));
