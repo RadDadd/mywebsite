@@ -1,13 +1,14 @@
 import {
   DATA_BASE, buildRows, filterRows, lowestAvailable, historyPaths, historySeries,
-  previousChange, centralTime, safeProductUrl, validateDocuments, timestamp
-} from './lib/gpu-tracker-data.mjs';
+  previousChange, centralTime, safeProductUrl, validateDocuments, timestamp, medianSeries
+} from './lib/gpu-tracker-data.mjs?v=20261104-median';
 
 const $ = id => document.getElementById(id);
 const money = value => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
 const colors = ['#75b5ff', '#c3a1ff', '#79ddba', '#f0cb8b'];
+const modelColors = ['#75b5ff', '#c3a1ff', '#79ddba', '#f0cb8b', '#ff9bb2', '#66d2e8', '#d7dc72'];
 const state = { cards: [], watchlist: null, latest: null, selectedCard: null, selectedListing: null,
-  days: 30, history: [], historyError: '', historyLoading: false, demo: false, hiddenSeries: new Set() };
+  days: 30, medianDays: 30, medianHidden: new Set(), history: [], historyError: '', historyLoading: false, demo: false, hiddenSeries: new Set() };
 let loadVersion = 0;
 let historyVersion = 0;
 
@@ -193,7 +194,7 @@ async function loadHistory() {
   state.historyLoading = true; state.historyError = ''; renderChart();
   try {
     const index = await fetchJson('data/history/index.json');
-    const paths = historyPaths(index, state.days);
+    const paths = historyPaths(index, Math.max(state.days, state.medianDays));
     const observations = []; let failures = 0; let next = 0;
     await Promise.all(Array.from({ length: Math.min(4, paths.length) }, async () => {
       while (next < paths.length && version === historyVersion) {
@@ -263,15 +264,58 @@ function renderChart() {
     return row;
   })));
   if (shown.length) drawChart(shown);
+  renderMedianChart();
 }
 
-function drawChart(series) {
-  const svg = $('price-chart');
-  const width = Math.max(240, Math.floor($('chart-container').getBoundingClientRect().width));
+function medianColor(id) { return modelColors[Math.max(0, state.cards.findIndex(card => card.card_id === id)) % modelColors.length]; }
+
+function medianLabel(item, point) {
+  const date = centralTime(point.price_checked_at_utc);
+  const stats = point.retailer_count ? `${money(point.price_usd)} median · ${money(point.minimum_usd)}–${money(point.maximum_usd)} · ${point.retailer_count} retailer${point.retailer_count === 1 ? '' : 's'}` : 'No qualifying retailers';
+  return `${item.name} · ${stats} · ${date.date}, ${date.time}`;
+}
+
+function renderMedianChart() {
+  const observations = [...state.history, ...state.latest.listings.map(row => row.last_successful_observation).filter(Boolean)];
+  const series = medianSeries(observations, state.cards, state.watchlist, state.medianDays);
+  const shown = series.filter(item => !state.medianHidden.has(item.id));
+  $('median-legend').replaceChildren(...state.cards.map(card => {
+    const button = element('button', undefined, 'legend-button'); button.type = 'button';
+    button.setAttribute('aria-pressed', String(!state.medianHidden.has(card.card_id)));
+    const swatch = element('span', undefined, 'legend-swatch'); swatch.style.backgroundColor = medianColor(card.card_id); swatch.setAttribute('aria-hidden', 'true');
+    button.append(swatch, document.createTextNode(card.gpu_model));
+    button.addEventListener('click', () => { if (state.medianHidden.has(card.card_id)) state.medianHidden.delete(card.card_id); else state.medianHidden.add(card.card_id); renderMedianChart(); });
+    return button;
+  }));
+  const hasPoints = shown.some(item => item.points.some(point => point.retailer_count > 0));
+  $('median-message').hidden = hasPoints;
+  $('median-message').textContent = state.historyLoading ? 'Loading median price history…'
+    : state.medianHidden.size === state.cards.length ? 'Select a GPU above to show its median history.'
+      : 'No qualifying in-stock price observations in this date range.';
+  $('median-container').hidden = !hasPoints; $('median-tooltip').hidden = true;
+  $('median-values').hidden = !shown.length;
+  $('median-value-rows').replaceChildren(...shown.flatMap(item => item.points.map(point => {
+    const row = element('tr'), date = centralTime(point.price_checked_at_utc);
+    row.append(element('td', item.name), element('td', point.retailer_count ? money(point.price_usd) : 'Unavailable'),
+      element('td', point.retailer_count ? `${money(point.minimum_usd)}–${money(point.maximum_usd)}` : '—'),
+      element('td', `${point.retailer_count} retailer${point.retailer_count === 1 ? '' : 's'}`), element('td', `${date.date}, ${date.time}`));
+    return row;
+  })));
+  $('median-note').textContent = [state.historyError, 'Median per exact model and collection run; no previous prices carried forward. Stale, unavailable, and marketplace offers excluded. Changes can reflect retailer availability as well as price. Gaps mean no qualifying retailers; one retailer is labeled explicitly. Independent of the filters above.'].filter(Boolean).join(' ');
+  if (hasPoints) drawChart(shown, true);
+}
+
+function drawChart(series, median = false) {
+  const svg = $(median ? 'median-price-chart' : 'price-chart');
+  const color = median ? medianColor : colorFor;
+  const tooltip = $(median ? 'median-tooltip' : 'chart-tooltip');
+  const demo = !median && state.demo;
+  const width = Math.max(240, Math.floor($(median ? 'median-container' : 'chart-container').getBoundingClientRect().width));
   const height = width < 600 ? 240 : 280;
   const margin = { left: 72, right: 18, top: 25, bottom: 42 };
-  const points = series.flatMap(item => item.points);
-  const times = points.map(point => timestamp(point.price_checked_at_utc));
+  const allPoints = series.flatMap(item => item.points);
+  const points = allPoints.filter(point => typeof point.price_usd === 'number' && Number.isFinite(point.price_usd));
+  const times = allPoints.map(point => timestamp(point.price_checked_at_utc));
   const prices = points.map(point => point.price_usd);
   let minTime = Math.min(...times), maxTime = Math.max(...times);
   if (minTime === maxTime) { minTime -= 43200000; maxTime += 43200000; }
@@ -280,8 +324,8 @@ function drawChart(series) {
   const x = time => margin.left + (time - minTime) / (maxTime - minTime) * (width - margin.left - margin.right);
   const y = price => margin.top + (maxPrice - price) / (maxPrice - minPrice) * (height - margin.top - margin.bottom);
   svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
-  svg.replaceChildren(svgElement('title', { id: 'chart-title' }, state.demo ? 'Illustrative GPU price history' : 'Collected GPU price history'),
-    svgElement('desc', { id: 'chart-desc' }, 'Retailer prices in US dollars over time. Exact values are available in the chart values table below.'));
+  svg.replaceChildren(svgElement('title', { id: median ? 'median-chart-title' : 'chart-title' }, median ? 'All GPU models median in-stock price history' : demo ? 'Illustrative GPU price history' : 'Collected GPU price history'),
+    svgElement('desc', { id: median ? 'median-chart-desc' : 'chart-desc' }, median ? 'Median prices in US dollars per model and collection run. The values table includes price ranges, retailer counts, and dates.' : 'Retailer prices in US dollars over time. Exact values are available in the chart values table below.'));
   svg.append(svgElement('text', { x: 4, y: 13, fill: '#a3b2c8', 'font-size': 11 }, 'USD'));
   for (let i = 0; i < 4; i++) {
     const value = minPrice + (maxPrice - minPrice) * i / 3;
@@ -290,7 +334,7 @@ function drawChart(series) {
   }
   for (let i = 0; i < 3; i++) {
     const time = minTime + (maxTime - minTime) * i / 2;
-    const label = state.demo ? `Day ${1 + Math.round((state.days - 1) * i / 2)}`
+    const label = demo ? `Day ${1 + Math.round((state.days - 1) * i / 2)}`
       : new Intl.DateTimeFormat('en-US', { timeZone: 'America/Chicago', month: 'short', day: 'numeric' }).format(time);
     svg.append(svgElement('text', { x: x(time), y: height - 17, 'text-anchor': i === 0 ? 'start' : i === 2 ? 'end' : 'middle', fill: '#a3b2c8', 'font-size': 11 }, label));
   }
@@ -298,16 +342,18 @@ function drawChart(series) {
   series.forEach(item => {
     const groups = new Map();
     item.points.forEach(point => {
+      if (point.price_usd === null) return;
       if (point.offer_id) { if (!groups.has(point.offer_id)) groups.set(point.offer_id, []); groups.get(point.offer_id).push(point); }
     });
     for (const group of groups.values()) {
-      if (group.length > 1) svg.append(svgElement('polyline', { points: group.map(point => `${x(timestamp(point.price_checked_at_utc))},${y(point.price_usd)}`).join(' '), fill: 'none', stroke: colorFor(item.id), 'stroke-width': 2 }));
+      if (group.length > 1) svg.append(svgElement('polyline', { points: group.map(point => `${x(timestamp(point.price_checked_at_utc))},${y(point.price_usd)}`).join(' '), fill: 'none', stroke: color(item.id), 'stroke-width': 2 }));
     }
     item.points.forEach(point => {
+      if (point.price_usd === null) return;
       const px = x(timestamp(point.price_checked_at_utc)), py = y(point.price_usd);
-      const dot = svgElement('circle', { cx: px, cy: py, r: 3.5, fill: point.availability === 'in_stock' ? colorFor(item.id) : '#121b29', stroke: colorFor(item.id), 'stroke-width': 1.5 });
+      const dot = svgElement('circle', { cx: px, cy: py, r: 3.5, fill: point.availability === 'in_stock' ? color(item.id) : '#121b29', stroke: color(item.id), 'stroke-width': 1.5 });
       const date = centralTime(point.price_checked_at_utc);
-      const label = state.demo ? `${item.name} · ${money(point.price_usd)} · sample data` : `${item.name} · ${money(point.price_usd)} · ${date.date}, ${date.time} · ${(point.availability || 'unknown').replaceAll('_', ' ')}`;
+      const label = median ? medianLabel(item, point) : demo ? `${item.name} · ${money(point.price_usd)} · sample data` : `${item.name} · ${money(point.price_usd)} · ${date.date}, ${date.time} · ${(point.availability || 'unknown').replaceAll('_', ' ')}`;
       dot.append(svgElement('title', {}, label)); svg.append(dot); hitPoints.push({ x: px, y: py, label });
     });
   });
@@ -317,10 +363,10 @@ function drawChart(series) {
     const bounds = svg.getBoundingClientRect(); const px = (event.clientX - bounds.left) * width / bounds.width;
     const py = (event.clientY - bounds.top) * height / bounds.height;
     const nearest = hitPoints.reduce((best, point) => (point.x - px) ** 2 + (point.y - py) ** 2 < (best.x - px) ** 2 + (best.y - py) ** 2 ? point : best);
-    $('chart-tooltip').textContent = nearest.label; $('chart-tooltip').hidden = false;
+    tooltip.textContent = nearest.label; tooltip.hidden = false;
   };
   overlay.addEventListener('pointermove', showPoint); overlay.addEventListener('pointerdown', showPoint);
-  overlay.addEventListener('pointerleave', event => { if (event.pointerType === 'mouse') $('chart-tooltip').hidden = true; });
+  overlay.addEventListener('pointerleave', event => { if (event.pointerType === 'mouse') tooltip.hidden = true; });
   svg.append(overlay);
 }
 
@@ -334,6 +380,21 @@ document.querySelectorAll('[data-days]').forEach(button => button.addEventListen
   renderChart(); if (state.watchlist) loadHistory();
 }));
 $('demo-toggle').addEventListener('click', () => { state.demo = !state.demo; state.hiddenSeries.clear(); renderChart(); });
+document.querySelectorAll('[data-median-days]').forEach(button => button.addEventListener('click', () => {
+  state.medianDays = Number(button.dataset.medianDays);
+  document.querySelectorAll('[data-median-days]').forEach(item => item.setAttribute('aria-pressed', String(item === button)));
+  renderMedianChart(); if (state.watchlist) loadHistory();
+}));
 let resizeFrame;
-new ResizeObserver(() => { cancelAnimationFrame(resizeFrame); resizeFrame = requestAnimationFrame(renderChart); }).observe($('chart-container'));
+const chartWidths = new Map();
+const chartResize = new ResizeObserver(entries => {
+  let changed = false;
+  for (const entry of entries) {
+    const width = Math.floor(entry.contentRect.width);
+    if (chartWidths.get(entry.target) !== width) { chartWidths.set(entry.target, width); changed = true; }
+  }
+  // Showing a tooltip changes height, not the plotting width.
+  if (changed && state.watchlist) { cancelAnimationFrame(resizeFrame); resizeFrame = requestAnimationFrame(renderChart); }
+});
+chartResize.observe($('chart-container')); chartResize.observe($('median-container'));
 loadData();

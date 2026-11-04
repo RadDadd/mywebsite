@@ -56,3 +56,11 @@ Failed history loads are reported without replacing the latest price table. Miss
 ## Verification
 
 `node --test test/gpu-tracker.test.mjs` covers empty files, retained prices after failed checks, 36-hour staleness, seller/model identity, exact-offer changes, null/zero prices, date-window selection, invalid history paths, UTC-to-Central formatting, and outbound URL validation.
+
+## All-card median chart
+
+The market-view chart aggregates successful, positive USD prices by exact card and collection run. It includes only enabled listings with matching model, retailer, seller, condition, and location, and verified in-stock availability. One latest check per retailer is counted; a later failed retry removes that retailer for that run. Explicitly stale observations and prices more than 36 hours older than the run are excluded. Prices are never carried forward between runs. Cards not checked in a run gain no invented point.
+
+For odd retailer counts, the median is the middle sorted price; for even counts, it is the arithmetic mean of the two middle prices. Tooltips and the accessible values table show the median, minimum, maximum, retailer count, and Central Time timestamp. One retailer is labeled explicitly. A checked card with no qualifying prices receives an unavailable point and breaks its line. New models show a dot until a second observation exists. Changes can reflect changes in retailer availability as well as item prices; tax and unverified shipping are excluded.
+
+The chart has independent 7/30/90-day controls and model visibility toggles. It ignores the retailer and in-stock filters for the selected-card table. History loads cover the longer of the two chart windows. Illustrative example data is never used in median calculations.

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { buildRows, lowestAvailable, filterRows, historyPaths, historySeries, previousChange,
-  centralTime, safeProductUrl, validateDocuments } from '../lib/gpu-tracker-data.mjs';
+  centralTime, safeProductUrl, validateDocuments, medianSeries } from '../lib/gpu-tracker-data.mjs';
 
 const now = Date.parse('2026-11-03T18:00:00Z');
 const listing = { listing_id: 'mc-card', card_id: 'card', retailer_id: 'mc', condition: 'new', enabled: true };
@@ -11,6 +11,46 @@ const observation = { observation_id: 'obs-1', offer_id: 'offer-1', listing_id: 
   collection_status: 'success', seller: 'Micro Center', condition: 'new', location: 'Overland Park, KS', currency: 'USD',
   price_usd: 700, price_checked_at_utc: '2026-11-03T17:00:00Z', availability: 'in_stock' };
 const latest = value => ({ schema_version: '1.0', listings: [{ listing_id: 'mc-card', last_attempt_status: 'success', last_successful_observation: value }] });
+
+const medianCards = [{ card_id: 'card', gpu_model: 'Test GPU' }, { card_id: 'other', gpu_model: 'Other GPU' }];
+const medianWatchlist = { listings: [1, 2, 3, 4].map(n => ({ ...listing, listing_id: `listing-${n}`, retailer_id: `retailer-${n}` })),
+  retailers: [1, 2, 3, 4].map(n => ({ ...retailer, retailer_id: `retailer-${n}`, seller: `Seller ${n}` })) };
+function medianObservation(n, price, run = 'run-1', extra = {}) {
+  return { ...observation, observation_id: `${run}-${n}`, run_id: run, listing_id: `listing-${n}`, retailer_id: `retailer-${n}`,
+    seller: `Seller ${n}`, price_usd: price, attempted_at_utc: '2026-11-03T17:00:00Z', ...extra };
+}
+test('median uses odd/even calculations, range, and unique retailer count', () => {
+  const values = [medianObservation(1, 100), medianObservation(2, 200), medianObservation(3, 900)];
+  let point = medianSeries([...values, values[0]], medianCards, medianWatchlist, 7, now)[0].points[0];
+  assert.equal(point.price_usd, 200); assert.equal(point.minimum_usd, 100); assert.equal(point.maximum_usd, 900); assert.equal(point.retailer_count, 3);
+  point = medianSeries(values.slice(0, 2), medianCards, medianWatchlist, 7, now)[0].points[0];
+  assert.equal(point.price_usd, 150); assert.equal(point.retailer_count, 2);
+});
+test('median excludes stock, seller, identity, and stale-price failures', () => {
+  const values = [medianObservation(1, 100), medianObservation(2, 20, 'run-1', { availability: 'out_of_stock' }),
+    medianObservation(3, 30, 'run-1', { seller: 'Marketplace' }), medianObservation(4, 40, 'run-1', { stale: true })];
+  const point = medianSeries(values, medianCards, medianWatchlist, 7, now)[0].points[0];
+  assert.equal(point.price_usd, 100); assert.equal(point.retailer_count, 1);
+  assert.equal(medianSeries([medianObservation(1, 100, 'run-1', { card_id: 'other' })], medianCards, medianWatchlist, 7, now).length, 0);
+  assert.equal(medianSeries([medianObservation(1, 100, 'run-1', { price_checked_at_utc: '2026-10-30T17:00:00Z' })], medianCards, medianWatchlist, 7, now)[0].points[0].retailer_count, 0);
+});
+test('missing eligible prices create gaps and separate line segments without carrying prices', () => {
+  const values = [medianObservation(1, 100), medianObservation(2, null, 'run-2', { collection_status: 'parse_error', price_checked_at_utc: null, attempted_at_utc: '2026-11-03T17:20:00Z' }),
+    medianObservation(1, 200, 'run-3', { attempted_at_utc: '2026-11-03T17:40:00Z', price_checked_at_utc: '2026-11-03T17:40:00Z' })];
+  const points = medianSeries(values, medianCards, medianWatchlist, 7, now)[0].points;
+  assert.deepEqual(points.map(p => p.price_usd), [100, null, 200]); assert.notEqual(points[0].offer_id, points[2].offer_id);
+  assert.equal(points[1].retailer_count, 0);
+});
+test('a later failed retry in the same run removes that retailer from the median', () => {
+  const values = [medianObservation(1, 100), medianObservation(1, null, 'run-1', { observation_id: 'retry', attempted_at_utc: '2026-11-03T17:10:00Z', collection_status: 'identity_mismatch', price_checked_at_utc: null }), medianObservation(2, 200)];
+  const point = medianSeries(values, medianCards, medianWatchlist, 7, now)[0].points[0];
+  assert.equal(point.price_usd, 200); assert.equal(point.retailer_count, 1);
+});
+test('median respects date window and skips future or unidentified runs', () => {
+  assert.equal(medianSeries([medianObservation(1, 100, '')], medianCards, medianWatchlist, 7, now).length, 0);
+  const values = [medianObservation(1, 100, 'old', { attempted_at_utc: '2026-10-01T17:00:00Z', price_checked_at_utc: '2026-10-01T17:00:00Z' }), medianObservation(2, 200, 'future', { attempted_at_utc: '2026-12-01T17:00:00Z', price_checked_at_utc: '2026-12-01T17:00:00Z' })];
+  assert.equal(medianSeries(values, medianCards, medianWatchlist, 7, now).length, 0);
+});
 
 test('uncollected listings have no price and do not count as in-stock', () => {
   const rows = buildRows(watchlist, { listings: [] }, 'card', now);
