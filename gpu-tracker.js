@@ -49,7 +49,11 @@ function colorFor(id) {
 }
 
 function renderPicker() {
-  $('card-picker').replaceChildren(...state.cards.map(card => {
+  const brandOrder = { NVIDIA: 0, AMD: 1 };
+  const cards = [...state.cards].sort((a, b) =>
+    (brandOrder[a.gpu_manufacturer] ?? 2) - (brandOrder[b.gpu_manufacturer] ?? 2)
+    || a.gpu_model.localeCompare(b.gpu_model, 'en', { numeric: true }));
+  $('card-picker').replaceChildren(...cards.map(card => {
     const button = element('button', undefined, 'gpu-choice');
     button.type = 'button';
     button.setAttribute('aria-pressed', String(card.card_id === state.selectedCard));
