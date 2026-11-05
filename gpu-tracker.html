@@ -47,14 +47,6 @@
       <p id="table-empty" class="empty" hidden>No offers match these filters.</p>
     </section>
     <p class="table-note">¹ Compared with the previous successful observation of the same offer, when history is available. Unknown shipping is not treated as free.</p>
-    <section class="history-panel" aria-labelledby="median-title">
-      <div class="history-heading"><div><p class="eyebrow">The market view</p><h2 id="median-title">All cards · median price</h2><p>Verified, in-stock retailer prices · each exact GPU model</p></div><div class="periods" role="group" aria-label="All cards date range"><button type="button" data-median-days="7" aria-pressed="false">7 days</button><button type="button" data-median-days="30" aria-pressed="true">30 days</button><button type="button" data-median-days="90" aria-pressed="false">90 days</button></div></div>
-      <div class="history-toolbar"><div id="median-legend" class="chart-legend" role="group" aria-label="GPU models shown in median chart"></div></div>
-      <p id="median-message" class="chart-message" role="status" aria-live="polite">Loading median price history…</p>
-      <div class="chart-container" id="median-container" hidden><svg id="median-price-chart" role="img" aria-labelledby="median-chart-title median-chart-desc"></svg><div id="median-tooltip" class="chart-tooltip" role="status" aria-live="polite" hidden></div></div>
-      <p class="chart-note" id="median-note">Each point is a single collection run; no previous prices are carried forward. Stale, unavailable, and marketplace offers are excluded. No qualifying retailers leaves a gap; one retailer is labeled explicitly. Independent of the retailer and stock filters above.</p>
-      <details id="median-values" hidden><summary>View median chart values</summary><div class="history-table-wrap"><table><thead><tr><th scope="col">Card</th><th scope="col">Median</th><th scope="col">Lowest–highest</th><th scope="col">Retailers</th><th scope="col">Date · CT</th></tr></thead><tbody id="median-value-rows"></tbody></table></div></details>
-    </section>
     <section class="history-panel" aria-labelledby="history-title">
       <div class="history-heading"><div><p class="eyebrow">The longer view</p><h2 id="history-title">Price history</h2><p id="history-description">Successful price observations from the watchlist.</p></div><div class="periods" role="group" aria-label="History date range"><button type="button" data-days="7" aria-pressed="false">7 days</button><button type="button" data-days="30" aria-pressed="true">30 days</button><button type="button" data-days="90" aria-pressed="false">90 days</button></div></div>
       <div class="history-toolbar"><div id="chart-legend" class="chart-legend" role="group" aria-label="Retailers shown in chart"></div><button id="demo-toggle" type="button" class="text-button" aria-pressed="false">Preview example chart</button></div>
@@ -64,6 +56,14 @@
       <details id="history-values" hidden><summary>View chart values</summary><div class="history-table-wrap"><table><thead><tr><th scope="col">Retailer</th><th scope="col">Price</th><th scope="col">Date · CT</th><th scope="col">Availability</th></tr></thead><tbody id="history-value-rows"></tbody></table></div></details>
       <div id="card-specs" class="card-specs" aria-label="Selected card specifications"></div>
       <p id="specs-note" class="specs-note"></p>
+    </section>
+    <section class="history-panel" aria-labelledby="median-title">
+      <div class="history-heading"><div><p class="eyebrow">The market view</p><h2 id="median-title">All cards · median price</h2><p>Verified, in-stock retailer prices · each exact GPU model</p></div><div class="periods" role="group" aria-label="All cards date range"><button type="button" data-median-days="7" aria-pressed="false">7 days</button><button type="button" data-median-days="30" aria-pressed="true">30 days</button><button type="button" data-median-days="90" aria-pressed="false">90 days</button></div></div>
+      <div class="history-toolbar"><div id="median-legend" class="chart-legend" role="group" aria-label="GPU models shown in median chart"></div></div>
+      <p id="median-message" class="chart-message" role="status" aria-live="polite">Loading median price history…</p>
+      <div class="chart-container" id="median-container" hidden><svg id="median-price-chart" role="img" aria-labelledby="median-chart-title median-chart-desc"></svg><div id="median-tooltip" class="chart-tooltip" role="status" aria-live="polite" hidden></div></div>
+      <p class="chart-note" id="median-note">Each point is a single collection run; no previous prices are carried forward. Stale, unavailable, and marketplace offers are excluded. No qualifying retailers leaves a gap; one retailer is labeled explicitly. Independent of the retailer and stock filters above.</p>
+      <details id="median-values" hidden><summary>View median chart values</summary><div class="history-table-wrap"><table><thead><tr><th scope="col">Card</th><th scope="col">Median</th><th scope="col">Lowest–highest</th><th scope="col">Retailers</th><th scope="col">Date · CT</th></tr></thead><tbody id="median-value-rows"></tbody></table></div></details>
     </section>
     <footer><p>USD · item prices before tax and shipping · new cards sold by each named retailer</p><p><a href="https://github.com/RadDadd/gpu-price-tracker" target="_blank" rel="noopener noreferrer">Price data ↗</a></p></footer>
   </main>
