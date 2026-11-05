@@ -30,7 +30,7 @@
 :root { color-scheme: dark; --bg:#061c15; --bg-deep:#050908; --surface:#0b1511; --text:#edf7f1; --muted:#a2b8ac; --accent:#6ee7b7; --border:#244237; }
 html { background:#050908; }
 body.nfl-page { background:radial-gradient(ellipse at 92% 0%, #0b5137 0, transparent 46%), linear-gradient(155deg,#07130e 0%,#050908 62%); background-attachment:fixed; }
-.nfl-page > .site-header { background:rgba(4,12,8,.94); border-bottom-color:#244237; }
+body.nfl-page > .site-header { background:rgba(4,12,8,.94); border-bottom-color:#244237; }
 .nfl-page .site-header .wordmark { color:#edf7f1; }
 .nfl-page .site-header .wordmark span { color:#6ee7b7; }
 .nfl-page .site-header .wordmark small, .nfl-page .site-header nav a { color:#a2b8ac; }
