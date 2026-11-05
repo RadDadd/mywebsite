@@ -25,3 +25,51 @@
 .nfl-page tbody tr:hover { background: rgba(255,255,255,.06); }
 .nfl-page .stats-note { font-size: .85rem; margin-top: 16px; }
 @media (max-width: 600px) { .stats-filters label { flex: 1 1 120px; min-width: 0; } .stats-filters input, .stats-filters select { width: 100%; } }
+
+/* NFL-only emerald and lime theme. */
+:root { color-scheme: dark; --bg:#061c15; --bg-deep:#050908; --surface:#0b1511; --text:#edf7f1; --muted:#a2b8ac; --accent:#6ee7b7; --border:#244237; }
+html { background:#050908; }
+body.nfl-page { background:radial-gradient(ellipse at 92% 0%, #0b5137 0, transparent 46%), linear-gradient(155deg,#07130e 0%,#050908 62%); background-attachment:fixed; }
+.nfl-page > .site-header { background:rgba(4,12,8,.94); border-bottom-color:#244237; }
+.nfl-page .site-header .wordmark { color:#edf7f1; }
+.nfl-page .site-header .wordmark span { color:#6ee7b7; }
+.nfl-page .site-header .wordmark small, .nfl-page .site-header nav a { color:#a2b8ac; }
+.nfl-page .site-header nav a[aria-current="page"] { color:#e6fff2; border-bottom-color:#34d399; }
+.nfl-page .site-header nav a:hover { color:#6ee7b7; }
+.nfl-page h1 { margin-bottom:14px; color:#f0faf4; }
+.nfl-page .nfl-chat { padding:26px; border:1px solid #2a5140; border-radius:18px; background:linear-gradient(125deg,#102b20 0%,#0a1611 68%,#09110d 100%); box-shadow:0 16px 50px #0003; }
+.nfl-page .nfl-chat h2 { margin-top:0; color:#8eebc1; }
+.nfl-page .chat-window { background:#050d09b3; border-color:#284b3b; backdrop-filter:none; }
+.nfl-page .assistant-message { background:#143224; color:#e3f5e9; }
+.nfl-page .user-message { background:linear-gradient(120deg,#72e9b5,#32c78e); color:#042315; }
+.nfl-page .chat-examples button { background:#0b2117; color:#9cf1ca; border-color:#34674e; }
+.nfl-page .chat-examples button:hover { background:#173e2b; }
+.nfl-page .chat-form input { background:#07110c; border-color:#34523f; }
+.nfl-page .chat-form button, .nfl-page .stats-filters button { background:linear-gradient(120deg,#6ee7b7,#28be86); color:#032617; font-weight:600; }
+.nfl-page .stats-filters { background:linear-gradient(110deg,#102219,#0a120e); border-color:#2a4938; }
+.nfl-page .stats-filters label { color:#c1d6c9; }
+.nfl-page .stats-filters input, .nfl-page .stats-filters select { background:#070e0a; border-color:#34523f; }
+.nfl-page input::placeholder { color:#93aa9b; }
+.nfl-page .table-scroll { background:#0a120e; border-color:#294636; }
+.nfl-page caption { color:#b5ccbd; background:linear-gradient(100deg,#123322,#0a1710); }
+.nfl-page thead { background:#101f16; color:#b0e8c7; }
+.nfl-page tbody tr:nth-child(even) { background:#0e1b13; }
+.nfl-page tbody tr:hover { background:#173a27; }
+.nfl-page td:first-child { color:#eef9f1; font-weight:600; }
+.nfl-page td:last-child { color:#86edb6; }
+.nfl-page .stats-note { color:#a2b8ac; }
+@media (max-width:600px) { .nfl-page .nfl-chat { padding:18px; } .nfl-page .message { max-width:95%; } .nfl-page .chat-form input { width:0; } }
+
+/* Lime variation: retain emerald surfaces and neutral body text. */
+:root { --accent:#c3f35b; }
+.nfl-page .site-header .wordmark span,
+.nfl-page .site-header nav a:hover { color:#c3f35b; }
+.nfl-page .site-header nav a[aria-current="page"] { border-bottom-color:#b7ef43; }
+.nfl-page .nfl-chat h2 { color:#c9ee8a; }
+.nfl-page .chat-examples button { color:#cbe99d; }
+.nfl-page .chat-form button,
+.nfl-page .stats-filters button,
+.nfl-page .user-message { background:linear-gradient(120deg,#d0f77a,#a8df37); color:#142306; }
+.nfl-page td:last-child { color:#c3ef7c; }
+.nfl-page .site-header a:focus-visible { outline-color:#c3f35b; }
+
