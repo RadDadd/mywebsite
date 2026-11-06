@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { buildRows, lowestAvailable, filterRows, historyPaths, historySeries, previousChange,
-  centralTime, safeProductUrl, validateDocuments, medianSeries } from '../lib/gpu-tracker-data.mjs';
+  centralTime, safeProductUrl, validateDocuments, medianSeries, familyMedianSeries, gpuFamilies } from '../lib/gpu-tracker-data.mjs';
 
 const now = Date.parse('2026-11-03T18:00:00Z');
 const listing = { listing_id: 'mc-card', card_id: 'card', retailer_id: 'mc', condition: 'new', enabled: true };
@@ -13,6 +13,39 @@ const observation = { observation_id: 'obs-1', offer_id: 'offer-1', listing_id: 
 const latest = value => ({ schema_version: '1.0', listings: [{ listing_id: 'mc-card', last_attempt_status: 'success', last_successful_observation: value }] });
 
 const medianCards = [{ card_id: 'card', gpu_model: 'Test GPU' }, { card_id: 'other', gpu_model: 'Other GPU' }];
+const marketCards = [
+  { card_id:'card', gpu_manufacturer:'NVIDIA', gpu_model:'RTX 5070 Ti', specs:{vram_gb:16,memory_type:'GDDR7'} },
+  { card_id:'pny', gpu_manufacturer:'NVIDIA', gpu_model:'RTX 5070 Ti', specs:{vram_gb:16,memory_type:'GDDR7'} },
+  { card_id:'small', gpu_manufacturer:'NVIDIA', gpu_model:'RTX 5070 Ti', specs:{vram_gb:8,memory_type:'GDDR7'} }
+];
+test('market grouping keeps VRAM variants separate and includes different manufacturers',()=>{
+  const groups=gpuFamilies(marketCards);
+  assert.equal(groups.length,2); assert.equal(groups[0].models.length,2);
+});
+test('family median includes multiple exact models at the same retailer without retailer weighting',()=>{
+  const w={listings:[listing,{...listing,listing_id:'pny-mc',card_id:'pny'}],retailers:[retailer]};
+  const first={...observation,run_id:'market',attempted_at_utc:observation.price_checked_at_utc,price_usd:1200};
+  const second={...first,observation_id:'pny',listing_id:'pny-mc',card_id:'pny',offer_id:'pny-offer',price_usd:800};
+  const p=familyMedianSeries([first,second,second],marketCards,w,7,now)[0].points[0];
+  assert.equal(p.price_usd,1000);assert.equal(p.offer_count,2);assert.equal(p.model_count,2);assert.equal(p.retailer_count,1);
+});
+test('family median deduplicates equivalent listings and excludes a later failed same-offer check',()=>{
+  const w={listings:[listing,{...listing,listing_id:'duplicate'}],retailers:[retailer]};
+  const first={...observation,run_id:'market',attempted_at_utc:observation.price_checked_at_utc};
+  const dup={...first,listing_id:'duplicate',observation_id:'duplicate'};
+  assert.equal(familyMedianSeries([first,dup],marketCards,w,7,now)[0].points[0].offer_count,1);
+  const fail={...dup,attempted_at_utc:'2026-11-03T17:10:00Z',collection_status:'timeout',price_checked_at_utc:null,price_usd:null};
+  assert.equal(familyMedianSeries([first,fail],marketCards,w,7,now)[0].points[0].offer_count,0);
+});
+test('family history preserves original narrow coverage and breaks lines when added models contribute',()=>{
+  const w={listings:[listing,{...listing,listing_id:'pny-mc',card_id:'pny'}],retailers:[retailer]};
+  const first={...observation,run_id:'old',attempted_at_utc:observation.price_checked_at_utc,price_usd:1200};
+  const second={...first,observation_id:'second',run_id:'expanded',attempted_at_utc:'2026-11-03T17:30:00Z',price_checked_at_utc:'2026-11-03T17:30:00Z'};
+  const third={...second,observation_id:'pny',listing_id:'pny-mc',card_id:'pny',offer_id:'pny-offer',price_usd:800};
+  const pts=familyMedianSeries([first,second,third],marketCards,w,7,now)[0].points;
+  assert.deepEqual(pts.map(p=>p.model_count),[1,2]);assert.deepEqual(pts.map(p=>p.price_usd),[1200,1000]);
+  assert.equal(pts[1].coverage_changed,true);assert.notEqual(pts[0].offer_id,pts[1].offer_id);
+});
 const medianWatchlist = { listings: [1, 2, 3, 4].map(n => ({ ...listing, listing_id: `listing-${n}`, retailer_id: `retailer-${n}` })),
   retailers: [1, 2, 3, 4].map(n => ({ ...retailer, retailer_id: `retailer-${n}`, seller: `Seller ${n}` })) };
 function medianObservation(n, price, run = 'run-1', extra = {}) {
@@ -119,3 +152,4 @@ test('initial document envelopes validate; duplicate and unknown references fail
   assert.throws(() => validateDocuments(cards, { ...watchlist, listings: [listing, listing] }, latest(observation)));
   assert.throws(() => validateDocuments({ ...cards, cards: [{ card_id: 'other' }] }, watchlist, latest(observation)));
 });
+

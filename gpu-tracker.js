@@ -1,7 +1,7 @@
 import {
   DATA_BASE, buildRows, filterRows, lowestAvailable, historyPaths, historySeries,
-  previousChange, centralTime, safeProductUrl, validateDocuments, timestamp, medianSeries
-} from './lib/gpu-tracker-data.mjs?v=20261104-median';
+  previousChange, centralTime, safeProductUrl, validateDocuments, timestamp, familyMedianSeries, gpuFamilies
+} from './lib/gpu-tracker-data.mjs?v=20261106-market';
 
 const $ = id => document.getElementById(id);
 const money = value => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
@@ -39,8 +39,9 @@ async function fetchJson(path) {
   return JSON.parse(text);
 }
 
-function currentCard() { return state.cards.find(card => card.card_id === state.selectedCard); }
-function allRows() { return state.watchlist ? buildRows(state.watchlist, state.latest, state.selectedCard) : []; }
+function families() { return gpuFamilies(state.cards); }
+function currentCard() { return families().find(card => card.card_id === state.selectedCard); }
+function allRows() { return state.watchlist ? currentCard().models.flatMap(card => buildRows(state.watchlist, state.latest, card.card_id)) : []; }
 function shownRows() { return filterRows(allRows(), $('retailer-filter').value, $('stock-filter').checked); }
 function colorFor(id) {
   const row = state.watchlist.listings.find(listing => listing.listing_id === id);
@@ -50,14 +51,14 @@ function colorFor(id) {
 
 function renderPicker() {
   const brandOrder = { NVIDIA: 0, AMD: 1 };
-  const cards = [...state.cards].sort((a, b) =>
+  const cards = families().sort((a, b) =>
     (brandOrder[a.gpu_manufacturer] ?? 2) - (brandOrder[b.gpu_manufacturer] ?? 2)
     || a.gpu_model.localeCompare(b.gpu_model, 'en', { numeric: true }));
   $('card-picker').replaceChildren(...cards.map(card => {
     const button = element('button', undefined, 'gpu-choice');
     button.type = 'button';
     button.setAttribute('aria-pressed', String(card.card_id === state.selectedCard));
-    button.append(element('strong', card.gpu_model), element('small', `${card.card_manufacturer} ${card.series} · ${card.specs?.vram_gb ?? '—'} GB ${card.specs?.memory_type ?? ''}`));
+    button.append(element('strong', card.gpu_model), element('small', `${card.specs?.vram_gb ?? '—'} GB ${card.specs?.memory_type ?? ''} · ${card.models.length} models · ${[...new Set(card.models.map(c => c.card_manufacturer))].join(', ')}`));
     button.addEventListener('click', () => {
       state.selectedCard = card.card_id; state.selectedListing = null; state.hiddenSeries.clear();
       renderPicker(); renderTable(); renderSpecs(); renderChart();
@@ -70,14 +71,12 @@ function renderSpecs() {
   const card = currentCard();
   if (!card) return;
   const specs = card.specs ?? {};
-  const labels = [card.full_card_name, card.manufacturer_part_number];
+  const labels = [card.name, `${card.models.length} tracked models`, ...card.models.map(c => `${c.card_manufacturer} ${c.series} · ${c.manufacturer_part_number}`)];
   if (specs.vram_gb) labels.push(`${specs.vram_gb} GB ${specs.memory_type ?? ''}`);
   if (specs.memory_bus_bits) labels.push(`${specs.memory_bus_bits}-bit`);
   if (specs.core_count) labels.push(`${specs.core_count.toLocaleString()} ${specs.core_type ?? 'cores'}`);
-  if (specs.boost_clock_mhz) labels.push(`${specs.boost_clock_mhz.toLocaleString()} MHz boost`);
-  if (specs.recommended_psu_w) labels.push(`${specs.recommended_psu_w} W recommended PSU`);
   $('card-specs').replaceChildren(...labels.filter(Boolean).map(text => element('span', text, 'spec')));
-  $('specs-note').textContent = card.specs_status?.includes('pending') ? 'Starter specifications · manufacturer verification pending.' : '';
+  $('specs-note').textContent = 'Core and memory specs apply to this GPU family. Cooling, clocks, dimensions, and PSU recommendations vary by exact model; follow its retailer link for details. New models may use retailer-verified specifications.';
 }
 
 function timeCell(value) {
@@ -91,7 +90,8 @@ function timeCell(value) {
 }
 
 function renderTable() {
-  const rows = shownRows();
+  const rows = shownRows().sort((a,b) => Number(b.eligible)-Number(a.eligible)
+    || (a.observation?.price_usd ?? Infinity)-(b.observation?.price_usd ?? Infinity));
   const lowest = lowestAvailable(allRows());
   const specs = currentCard().specs ?? {};
   const basicStats = [
@@ -102,7 +102,8 @@ function renderTable() {
     const { observation: obs, listing, retailer, update, stale } = row;
     const tr = element('tr', undefined, state.selectedListing === listing.listing_id ? 'row-selected' : '');
     const name = element('td');
-    name.append(element('span', retailer.name, 'retailer-name'), element('small', currentCard().full_card_name));
+    const exactCard = state.cards.find(card => card.card_id === listing.card_id);
+    name.append(element('span', retailer.name, 'retailer-name'), element('small', exactCard.full_card_name));
     if (basicStats) name.append(element('small', basicStats));
     if (retailer.location) name.append(element('small', retailer.location));
     const price = element('td');
@@ -130,7 +131,7 @@ function renderTable() {
     const actionsCell = element('td');
     const actions = element('div', undefined, 'row-actions');
     const history = element('button', 'History'); history.type = 'button';
-    history.setAttribute('aria-label', `Show ${retailer.name} history`);
+    history.setAttribute('aria-label', `Show ${exactCard.card_manufacturer} ${exactCard.series} at ${retailer.name} history`);
     history.setAttribute('aria-pressed', String(state.selectedListing === listing.listing_id));
     history.addEventListener('click', () => {
       state.demo = false; state.selectedListing = state.selectedListing === listing.listing_id ? null : listing.listing_id;
@@ -144,7 +145,8 @@ function renderTable() {
     return tr;
   }));
   $('table-empty').hidden = rows.length > 0;
-  $('offer-count').textContent = `${rows.length} retailer offer${rows.length === 1 ? '' : 's'} · exact model match`;
+  const eligible = allRows().filter(row => row.eligible);
+  $('offer-count').textContent = `${rows.length} shown · ${currentCard().models.length} tracked models · ${eligible.length} fresh in-stock offers from ${new Set(eligible.map(r => r.retailer.retailer_id)).size} retailers`;
   $('comparison').setAttribute('aria-busy', 'false');
 }
 
@@ -170,7 +172,7 @@ async function loadData() {
     validateDocuments(cards, watchlist, latest);
     state.cards = cards.cards; state.watchlist = watchlist; state.latest = latest;
     state.history = []; state.historyError = ''; state.hiddenSeries.clear();
-    if (!state.cards.some(card => card.card_id === state.selectedCard)) state.selectedCard = state.cards[0].card_id;
+    if (!families().some(card => card.card_id === state.selectedCard)) state.selectedCard = families()[0].card_id;
     const previous = $('retailer-filter').value;
     const all = element('option', 'All retailers'); all.value = 'all';
     $('retailer-filter').replaceChildren(all, ...watchlist.retailers.map(retailer => {
@@ -238,7 +240,11 @@ function renderChart() {
   let rows = shownRows();
   if (state.selectedListing) rows = rows.filter(row => row.listing.listing_id === state.selectedListing);
   const observations = [...state.history, ...rows.map(row => row.observation).filter(Boolean)];
-  const series = state.demo ? sampleSeries(rows) : historySeries(observations, rows, state.days);
+  const series = state.demo ? sampleSeries(rows) : historySeries(observations, rows, state.days).map(item => {
+    const listing = state.watchlist.listings.find(l => l.listing_id === item.id);
+    const exact = state.cards.find(c => c.card_id === listing.card_id);
+    return { ...item, name: `${exact.card_manufacturer} ${exact.series} · ${item.name}` };
+  });
   const shown = series.filter(item => !state.hiddenSeries.has(item.id));
   const demo = $('demo-toggle'); demo.textContent = state.demo ? 'Return to collected history' : 'Preview example chart';
   demo.setAttribute('aria-pressed', String(state.demo));
@@ -271,30 +277,30 @@ function renderChart() {
   renderMedianChart();
 }
 
-function medianColor(id) { return modelColors[Math.max(0, state.cards.findIndex(card => card.card_id === id)) % modelColors.length]; }
+function medianColor(id) { return modelColors[Math.max(0, families().findIndex(card => card.card_id === id)) % modelColors.length]; }
 
 function medianLabel(item, point) {
   const date = centralTime(point.price_checked_at_utc);
-  const stats = point.retailer_count ? `${money(point.price_usd)} median · ${money(point.minimum_usd)}–${money(point.maximum_usd)} · ${point.retailer_count} retailer${point.retailer_count === 1 ? '' : 's'}` : 'No qualifying retailers';
+  const stats = point.offer_count ? `${money(point.price_usd)} median · ${money(point.minimum_usd)}–${money(point.maximum_usd)} · ${point.offer_count} offers / ${point.model_count} models / ${point.retailer_count} retailers${point.coverage_changed ? ' · model coverage changed' : ''}` : 'No qualifying offers';
   return `${item.name} · ${stats} · ${date.date}, ${date.time}`;
 }
 
 function renderMedianChart() {
   const observations = [...state.history, ...state.latest.listings.map(row => row.last_successful_observation).filter(Boolean)];
-  const series = medianSeries(observations, state.cards, state.watchlist, state.medianDays);
+  const series = familyMedianSeries(observations, state.cards, state.watchlist, state.medianDays);
   const shown = series.filter(item => !state.medianHidden.has(item.id));
-  $('median-legend').replaceChildren(...state.cards.map(card => {
+  $('median-legend').replaceChildren(...families().map(card => {
     const button = element('button', undefined, 'legend-button'); button.type = 'button';
     button.setAttribute('aria-pressed', String(!state.medianHidden.has(card.card_id)));
     const swatch = element('span', undefined, 'legend-swatch'); swatch.style.backgroundColor = medianColor(card.card_id); swatch.setAttribute('aria-hidden', 'true');
-    button.append(swatch, document.createTextNode(card.gpu_model));
+    button.append(swatch, document.createTextNode(card.name));
     button.addEventListener('click', () => { if (state.medianHidden.has(card.card_id)) state.medianHidden.delete(card.card_id); else state.medianHidden.add(card.card_id); renderMedianChart(); });
     return button;
   }));
   const hasPoints = shown.some(item => item.points.some(point => point.retailer_count > 0));
   $('median-message').hidden = hasPoints;
   $('median-message').textContent = state.historyLoading ? 'Loading median price history…'
-    : state.medianHidden.size === state.cards.length ? 'Select a GPU above to show its median history.'
+    : state.medianHidden.size === families().length ? 'Select a GPU above to show its median history.'
       : 'No qualifying in-stock price observations in this date range.';
   $('median-container').hidden = !hasPoints; $('median-tooltip').hidden = true;
   $('median-values').hidden = !shown.length;
@@ -302,10 +308,10 @@ function renderMedianChart() {
     const row = element('tr'), date = centralTime(point.price_checked_at_utc);
     row.append(element('td', item.name), element('td', point.retailer_count ? money(point.price_usd) : 'Unavailable'),
       element('td', point.retailer_count ? `${money(point.minimum_usd)}–${money(point.maximum_usd)}` : '—'),
-      element('td', `${point.retailer_count} retailer${point.retailer_count === 1 ? '' : 's'}`), element('td', `${date.date}, ${date.time}`));
+      element('td', `${point.offer_count} offers · ${point.model_count} models · ${point.retailer_count} retailers${point.coverage_changed ? ' · coverage changed' : ''}`), element('td', `${date.date}, ${date.time}`));
     return row;
   })));
-  $('median-note').textContent = [state.historyError, 'Median per exact model and collection run; no previous prices carried forward. Stale, unavailable, and marketplace offers excluded. Changes can reflect retailer availability as well as price. Gaps mean no qualifying retailers; one retailer is labeled explicitly. Independent of the filters above.'].filter(Boolean).join(' ');
+  $('median-note').textContent = [state.historyError, 'Tracked-market median by GPU family and VRAM: every qualifying new, in-stock exact-model offer in that collection run has equal weight. Duplicate card/seller/retailer/location offers count once. Failed, stale, unavailable, and marketplace offers are excluded; no old prices carried forward. This is our tracked sample, not the entire market. Values show offer/model/retailer coverage; earlier history had fewer models. Lines break when contributing model coverage changes. Availability and sample changes can move the median without an individual price change. Independent of the filters above.'].filter(Boolean).join(' ');
   if (hasPoints) drawChart(shown, true);
 }
 
@@ -402,3 +408,4 @@ const chartResize = new ResizeObserver(entries => {
 });
 chartResize.observe($('chart-container')); chartResize.observe($('median-container'));
 loadData();
+
