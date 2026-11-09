@@ -44,9 +44,9 @@ function currentCard() { return families().find(card => card.card_id === state.s
 function allRows() { return state.watchlist ? currentCard().models.flatMap(card => buildRows(state.watchlist, state.latest, card.card_id)) : []; }
 function shownRows() { return filterRows(allRows(), $('retailer-filter').value, $('stock-filter').checked); }
 function colorFor(id) {
-  const row = state.watchlist.listings.find(listing => listing.listing_id === id);
-  const index = state.watchlist.retailers.findIndex(retailer => retailer.retailer_id === row?.retailer_id);
-  return colors[Math.max(0, index) % colors.length];
+  // Stable, distinct colors for individual listings rather than just four retailer colors.
+  const index = Math.max(0, state.watchlist.listings.findIndex(listing => listing.listing_id === id));
+  return `hsl(${(index * 137.508 + 205) % 360} 78% 69%)`;
 }
 
 function renderPicker() {
@@ -239,8 +239,10 @@ function renderChart() {
   const card = currentCard();
   let rows = shownRows();
   if (state.selectedListing) rows = rows.filter(row => row.listing.listing_id === state.selectedListing);
-  const observations = [...state.history, ...rows.map(row => row.observation).filter(Boolean)];
-  const series = state.demo ? sampleSeries(rows) : historySeries(observations, rows, state.days).map(item => {
+  // Historical series use every listing in the selected GPU family, regardless of table filters.
+  const historyRows = allRows();
+  const observations = [...state.history, ...historyRows.map(row => row.observation).filter(Boolean)];
+  const series = state.demo ? sampleSeries(rows) : historySeries(observations, historyRows, state.days).map(item => {
     const listing = state.watchlist.listings.find(l => l.listing_id === item.id);
     const exact = state.cards.find(c => c.card_id === listing.card_id);
     return { ...item, name: `${exact.card_manufacturer} ${exact.series} · ${item.name}` };
@@ -263,7 +265,7 @@ function renderChart() {
     : series.length && !shown.length ? 'Select a retailer above to show its history.'
       : state.historyError || 'History will appear after the first successful price checks.';
   $('chart-note').textContent = state.demo ? 'Sample data for previewing the design. The table above continues to show only collected data.'
-    : shown.length ? [state.historyError, 'Dots are successful observations; hollow dots indicate unavailable or unknown stock. Separate offers are not joined.'].filter(Boolean).join(' ') : '';
+    : shown.length ? [state.historyError, 'History includes all tracked retailers regardless of the table filters. Dots are successful observations; hollow dots indicate unavailable or unknown stock. Separate offers are not joined.'].filter(Boolean).join(' ') : '';
   $('chart-container').hidden = !shown.length;
   $('chart-tooltip').hidden = true;
   $('history-values').hidden = !shown.length;
