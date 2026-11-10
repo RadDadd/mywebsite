@@ -354,8 +354,8 @@ function drawChart(series, median = false, panelSvg = null) {
   const x = time => margin.left + (time - minTime) / (maxTime - minTime) * (width - margin.left - margin.right);
   const y = price => margin.top + (maxPrice - price) / (maxPrice - minPrice) * (height - margin.top - margin.bottom);
   svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
-  svg.replaceChildren(svgElement('title', { id: median ? 'median-chart-title' : 'chart-title' }, median ? 'All GPU models median in-stock price history' : demo ? 'Illustrative GPU price history' : 'Collected GPU price history'),
-    svgElement('desc', { id: median ? 'median-chart-desc' : 'chart-desc' }, median ? 'Median prices in US dollars per model and collection run. The values table includes price ranges, retailer counts, and dates.' : 'Retailer prices in US dollars over time. Exact values are available in the chart values table below.'));
+  svg.replaceChildren(svgElement('title', { ...(panelSvg ? {} : {id: median ? 'median-chart-title' : 'chart-title'}) }, median ? 'All GPU models median in-stock price history' : demo ? 'Illustrative GPU price history' : 'Collected GPU price history'),
+    svgElement('desc', { ...(panelSvg ? {} : {id: median ? 'median-chart-desc' : 'chart-desc'}) }, median ? 'Median prices in US dollars per model and collection run. The values table includes price ranges, retailer counts, and dates.' : 'Retailer prices in US dollars over time. Exact values are available in the chart values table below.'));
   svg.append(svgElement('text', { x: 4, y: 13, fill: '#a3b2c8', 'font-size': 11 }, 'USD'));
   for (let value = minPrice; value <= maxPrice + step / 100; value += step) {
     svg.append(svgElement('line', { x1: margin.left, x2: width - margin.right, y1: y(value), y2: y(value), stroke: '#29374b' }),
