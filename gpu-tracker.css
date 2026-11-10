@@ -116,3 +116,14 @@ footer { margin-top: 24px; display: flex; flex-wrap: wrap; gap: 10px 24px; justi
   #price-chart, #median-price-chart { height: 240px; }
 }
 @media (prefers-reduced-motion: no-preference) { button { transition: background-color .15s, border-color .15s; } }
+
+.median-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+.median-panel {min-width:0;background:#0c1320;border:1px solid #29374b;border-radius:12px;padding:18px}
+.median-panel h3 {margin:0 0 4px;font-size:1rem;color:#e8eef8}
+.median-panel .median-current {margin:0;font-size:1.5rem;color:#e8eef8}
+.median-panel small {color:#a3b2c8}
+.median-panel svg {display:block;width:100%;margin-top:12px}
+.median-method {margin:18px 0;color:#a3b2c8}
+.median-method summary {cursor:pointer}
+#median-container {overflow:visible}
+@media(max-width:700px){.median-grid{grid-template-columns:1fr}}

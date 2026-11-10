@@ -313,17 +313,31 @@ function renderMedianChart() {
       element('td', `${point.offer_count} offers · ${point.model_count} models · ${point.retailer_count} retailers${point.coverage_changed ? ' · coverage changed' : ''}`), element('td', `${date.date}, ${date.time}`));
     return row;
   })));
-  $('median-note').textContent = [state.historyError, 'Tracked-market median by GPU family and VRAM: every qualifying new, in-stock exact-model offer in that collection run has equal weight. Duplicate card/seller/retailer/location offers count once. Failed, stale, unavailable, and marketplace offers are excluded; no old prices carried forward. This is our tracked sample, not the entire market. Values show offer/model/retailer coverage; earlier history had fewer models. Lines break when contributing model coverage changes. Availability and sample changes can move the median without an individual price change. Independent of the filters above.'].filter(Boolean).join(' ');
-  if (hasPoints) drawChart(shown, true);
+  $('median-note').textContent = [state.historyError, 'Tracked-market median by GPU family and VRAM: every qualifying new, in-stock exact-model offer in that collection run has equal weight. Duplicate card/seller/retailer/location offers count once. Failed, stale, unavailable, and marketplace offers are excluded; no old prices carried forward. This is our tracked sample, not the entire market. Values show offer/model/retailer coverage; earlier history had fewer models. Gaps indicate changes in contributing model coverage. Each panel uses its own labeled price scale. Availability and sample changes can move the median without an individual price change. Independent of the filters above.'].filter(Boolean).join(' ');
+  const container = $('median-container');
+  container.querySelector('.median-grid')?.remove();
+  $('median-price-chart').style.display = 'none';
+  if (hasPoints) {
+    const grid = element('div', undefined, 'median-grid'); container.append(grid);
+    shown.forEach(item => {
+      const valid = item.points.filter(p => p.price_usd !== null && Number.isFinite(p.price_usd));
+      if (!valid.length) return;
+      const panel = element('section', undefined, 'median-panel'), last = valid.at(-1);
+      panel.append(element('h3', item.name), element('p', money(last.price_usd), 'median-current'),
+        element('small', last.offer_count + ' offers · ' + last.model_count + ' models · ' + last.retailer_count + ' retailers'));
+      const plot = svgElement('svg', { role: 'img', 'aria-label': item.name + ' median price history' });
+      panel.append(plot); grid.append(panel); drawChart([item], true, plot);
+    });
+  }
 }
 
-function drawChart(series, median = false) {
-  const svg = $(median ? 'median-price-chart' : 'price-chart');
+function drawChart(series, median = false, panelSvg = null) {
+  const svg = panelSvg || $(median ? 'median-price-chart' : 'price-chart');
   const color = median ? medianColor : colorFor;
   const tooltip = $(median ? 'median-tooltip' : 'chart-tooltip');
   const demo = !median && state.demo;
-  const width = Math.max(240, Math.floor($(median ? 'median-container' : 'chart-container').getBoundingClientRect().width));
-  const height = width < 600 ? 240 : 280;
+  const width = Math.max(240, Math.floor((panelSvg ? panelSvg.parentElement : $(median ? 'median-container' : 'chart-container')).getBoundingClientRect().width));
+  const height = panelSvg ? 230 : width < 600 ? 260 : 320;
   const margin = { left: 72, right: 18, top: 25, bottom: 42 };
   const allPoints = series.flatMap(item => item.points);
   const points = allPoints.filter(point => typeof point.price_usd === 'number' && Number.isFinite(point.price_usd));
@@ -332,17 +346,20 @@ function drawChart(series, median = false) {
   let minTime = Math.min(...times), maxTime = Math.max(...times);
   if (minTime === maxTime) { minTime -= 43200000; maxTime += 43200000; }
   const padding = Math.max(5, (Math.max(...prices) - Math.min(...prices)) * .15);
-  const minPrice = Math.max(0, Math.min(...prices) - padding), maxPrice = Math.max(...prices) + padding;
+  const rawStep = (Math.max(...prices) - Math.min(...prices) + padding * 2) / 4;
+  const magnitude = 10 ** Math.floor(Math.log10(rawStep));
+  const step = [1,2,2.5,5,10].map(n => n * magnitude).find(n => n >= rawStep);
+  const minPrice = Math.max(0, Math.floor((Math.min(...prices) - padding) / step) * step);
+  const maxPrice = Math.ceil((Math.max(...prices) + padding) / step) * step;
   const x = time => margin.left + (time - minTime) / (maxTime - minTime) * (width - margin.left - margin.right);
   const y = price => margin.top + (maxPrice - price) / (maxPrice - minPrice) * (height - margin.top - margin.bottom);
   svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
   svg.replaceChildren(svgElement('title', { id: median ? 'median-chart-title' : 'chart-title' }, median ? 'All GPU models median in-stock price history' : demo ? 'Illustrative GPU price history' : 'Collected GPU price history'),
     svgElement('desc', { id: median ? 'median-chart-desc' : 'chart-desc' }, median ? 'Median prices in US dollars per model and collection run. The values table includes price ranges, retailer counts, and dates.' : 'Retailer prices in US dollars over time. Exact values are available in the chart values table below.'));
   svg.append(svgElement('text', { x: 4, y: 13, fill: '#a3b2c8', 'font-size': 11 }, 'USD'));
-  for (let i = 0; i < 4; i++) {
-    const value = minPrice + (maxPrice - minPrice) * i / 3;
+  for (let value = minPrice; value <= maxPrice + step / 100; value += step) {
     svg.append(svgElement('line', { x1: margin.left, x2: width - margin.right, y1: y(value), y2: y(value), stroke: '#29374b' }),
-      svgElement('text', { x: margin.left - 10, y: y(value) + 4, 'text-anchor': 'end', fill: '#a3b2c8', 'font-size': 11 }, money(value)));
+      svgElement('text', { x: margin.left - 10, y: y(value) + 4, 'text-anchor': 'end', fill: '#a3b2c8', 'font-size': 11 }, new Intl.NumberFormat('en-US', {style:'currency',currency:'USD',maximumFractionDigits:step < 1 ? 2 : 0}).format(value)));
   }
   for (let i = 0; i < 3; i++) {
     const time = minTime + (maxTime - minTime) * i / 2;

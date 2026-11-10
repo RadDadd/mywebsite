@@ -7,7 +7,7 @@
   <title>GPU Price Tracker · RadData</title>
   <link rel="stylesheet" href="gpu-tracker.css">
   <link rel="stylesheet" href="site-nav.css">
-  <script type="module" src="gpu-tracker.js?v=20261106-market"></script>
+  <script type="module" src="gpu-tracker.js?v=20261110-panels"></script>
 </head>
 <body class="has-site-nav">
   <a class="skip-link" href="#tracker">Skip to GPU prices</a>
@@ -62,7 +62,7 @@
       <div class="history-toolbar"><div id="median-legend" class="chart-legend" role="group" aria-label="GPU models shown in median chart"></div></div>
       <p id="median-message" class="chart-message" role="status" aria-live="polite">Loading median price history…</p>
       <div class="chart-container" id="median-container" hidden><svg id="median-price-chart" role="img" aria-labelledby="median-chart-title median-chart-desc"></svg><div id="median-tooltip" class="chart-tooltip" role="status" aria-live="polite" hidden></div></div>
-      <p class="chart-note" id="median-note">Each point is a single collection run; no previous prices are carried forward. Stale, unavailable, and marketplace offers are excluded. No qualifying retailers leaves a gap; one retailer is labeled explicitly. Independent of the retailer and stock filters above.</p>
+      <details class="median-method"><summary>How this chart is calculated</summary><p class="chart-note" id="median-note">Each point is a single collection run; no previous prices are carried forward. Stale, unavailable, and marketplace offers are excluded. No qualifying retailers leaves a gap; one retailer is labeled explicitly. Independent of the retailer and stock filters above.</p></details>
       <details id="median-values" hidden><summary>View median chart values</summary><div class="history-table-wrap"><table><thead><tr><th scope="col">GPU family</th><th scope="col">Median</th><th scope="col">Lowest–highest</th><th scope="col">Sample coverage</th><th scope="col">Date · CT</th></tr></thead><tbody id="median-value-rows"></tbody></table></div></details>
     </section>
     <footer><p>USD · item prices before tax and shipping · new cards sold by each named retailer</p><p><a href="https://github.com/RadDadd/gpu-price-tracker" target="_blank" rel="noopener noreferrer">Price data ↗</a></p></footer>
